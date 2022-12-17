@@ -1,13 +1,6 @@
 name: Nexus3DS
 
-on:
-  # Triggers the workflow on push or pull request events but only for the master branch
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-    branches: [ main ]    
+on: workflow_dispatch
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.issue.number || github.run_id }}
@@ -28,4 +21,13 @@ jobs:
         run : |
           apt install build-essential git libsdl2-dev libvorbis-dev libogg-dev libtheora-dev -y   
       - name: Build Sonic Nexus for the Nintendo 3DS
-        run: make	             
+        run: make -f Makefile.3ds
+      - name: Move artifacts
+        run: |
+          mkdir artifacts
+          mv ./bin/3DS/CTR/ ./artifacts
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1.0.0
+        with:
+          name: Nexus 3DS
+          path: artifacts                       
