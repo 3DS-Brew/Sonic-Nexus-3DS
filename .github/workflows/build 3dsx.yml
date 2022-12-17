@@ -26,4 +26,4 @@ jobs:
         uses: actions/upload-artifact@v2.2.4
         with:
           name: 3DSX Build
-          path: 'build/3ds'        
+          path: 'build/build_3ds'        
