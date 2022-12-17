@@ -158,6 +158,11 @@ enum RetroBytecodeFormat {
 #include <Vorbis/vorbisfile.h>
 
 #include "cocoaHelpers.hpp"
+#elif RETRO_PLATFORM == RETRO_iOS
+#include <SDL2/SDL.h>
+#include <vorbis/vorbisfile.h>
+
+#include "cocoaHelpers.hpp"
 #elif RETRO_PLATFORM == RETRO_3DS
 #include <3ds.h>
 #include <tremor/ivorbisfile.h>
@@ -166,6 +171,7 @@ enum RetroBytecodeFormat {
 #include <SDL/SDL.h>
 #if RETRO_USING_SDLMIXER
 #include <SDL/SDL_mixer.h>
+#endif
 #endif
 #endif
 
@@ -220,20 +226,13 @@ public:
     int frameSkipTimer   = 0;
 
     // Ported from RSDKv5
-    int startList_Game  = -1;
-    int startStage_Game = -1;
-
-    bool consoleEnabled  = false;
     bool devMenu         = false;
-    int startList        = -1;
-    int startStage       = -1;
+    int startList        = 0;
+    int startStage       = 0;
     int gameSpeed        = 1;
     int fastForwardSpeed = 8;
     bool masterPaused    = false;
     bool frameStep       = false;
-
-    char startSceneFolder[0x10];
-    char startSceneID[0x10];
 
     void Init();
     void Run();
@@ -282,7 +281,6 @@ public:
 
     SDL_Event sdlEvents;
 #endif
-
 
     // not separating render backends by preprocessors this time
 #if RETRO_PLATFORM == RETRO_3DS

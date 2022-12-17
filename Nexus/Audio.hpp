@@ -1,11 +1,11 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-#if RETRO_PLATFORM != RETRO_3DS
 #include <stdlib.h>
-#endif
 
+#if RETRO_PLATFORM != RETRO_3DS
 #include <vorbis/vorbisfile.h>
+#endif
 
 #if RETRO_PLATFORM != RETRO_VITA && RETRO_PLATFORM != RETRO_3DS
 #include "SDL.h"
@@ -24,7 +24,7 @@ struct TrackInfo {
 
 #if RETRO_USING_SDLMIXER
     Mix_Music* mus;
-#endif    
+#endif
 };
 
 struct MusicPlaybackInfo {
@@ -47,7 +47,7 @@ struct SFXInfo {
     char name[0x40];
 #if RETRO_USING_SDLMIXER
     Mix_Chunk* chunk;
-#endif    
+#endif
     Sint16 *buffer;
     size_t length;
     bool loaded;
@@ -152,14 +152,13 @@ inline void freeMusInfo()
 }
 #endif
 
-void LoadMusic(void *userdata);
 void SetMusicTrack(char *filePath, byte trackID, bool loop);
 bool PlayMusic(int track);
 inline void StopMusic()
 {
 #if RETRO_USING_SDLMIXER
     Mix_HaltMusic();
-
+    
     currentTrack = -1;
     previousTrack = -1;
 #endif
@@ -188,7 +187,7 @@ inline void SetMusicVolume(int volume)
     Mix_VolumeMusic(volume);
 #endif
      printLog("SetMusicVolume() called");
-         
+
     if (volume < 0)
         volume = 0;
     if (volume > MAX_VOLUME)

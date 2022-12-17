@@ -217,7 +217,7 @@ void controllerClose(byte controllerID)
     if (controllers.empty()) {
         inputType = 0;
     }
-#endif    
+#endif
 }
 
 void ProcessInput()
@@ -392,7 +392,7 @@ void CheckKeyPress(InputData *input, byte flags)
 #if RETRO_PLATFORM == RETRO_3DS
     u32 p = hidKeysDown();
     CheckAgainstP(input, flags, p);
-#else    
+#else
     if (flags & 0x1)
         input->up = inputDevice[INPUT_UP].press;
     if (flags & 0x2)
@@ -411,7 +411,7 @@ void CheckKeyPress(InputData *input, byte flags)
         input->start = inputDevice[INPUT_START].press;
     if (flags & 0x80)
         anyPress = inputDevice[INPUT_ANY].press;
-#endif        
+#endif
 }
 
 void CheckKeyDown(InputData *input, byte flags)
@@ -419,7 +419,7 @@ void CheckKeyDown(InputData *input, byte flags)
 #if RETRO_PLATFORM == RETRO_3DS
     u32 p = hidKeysHeld();
     CheckAgainstP(input, flags, p);
-#else    
+#else
     if (flags & 0x1)
         input->up = inputDevice[INPUT_UP].hold;
     if (flags & 0x2)
@@ -436,5 +436,5 @@ void CheckKeyDown(InputData *input, byte flags)
         input->C = inputDevice[INPUT_BUTTONC].hold;
     if (flags & 0x80)
         input->start = inputDevice[INPUT_START].hold;
-#endif        
+#endif
 }
