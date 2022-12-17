@@ -30,8 +30,8 @@ Without assets from the game, this decompilation will not run. You can download 
 
 ## Nintendo 3DS
 * Set up a working 3DS Homebrew Environment. You can find more information on this [here](https://www.3dbrew.org/wiki/Setting_up_Development_Environment).
-* Make sure `SDL`, `SDL_mixer`, `devkitpro` and it's dependencies are installed.
-* Run `make -f Makefile.3ds`. Run `make -f Makefile.3ds cia` to build a `.cia` file.
+* Look in the github workflow for the dependencies.
+* Run `make 3dsx` for a .3dsx (homebrew) file. Run `make cia` to build a `.cia` file.
 
 ## Unofficial Branches
 Follow the installation instructions in the readme of each branch.
