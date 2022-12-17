@@ -39,71 +39,134 @@ INCLUDES	:=	include
 GRAPHICS	:=	gfx
 GFXBUILD	:=	$(BUILD)
 ICON	:=	3ds/icon.png
+RESOURCES := 3ds
 #ROMFS		:=	romfs
 #GFXBUILD	:=	$(ROMFS)/gfx
 
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
-
-CFLAGS	:=	-g -Wall -O2 -mword-relocations \
-			-ffunction-sections \
-			$(ARCH)
-
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -D__3DS__
-
-CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
-
-ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
-
-LIBS	:= -lSDL_mixer -lSDL -lmikmod -lmad -lvorbisidec -logg -lcitro2d -lcitro3d -lctru -lm
+APP_INFO := $(RESOURCES)/AppInfo
+BANNER_AUDIO := $(RESOURCES)/audio
+BANNER_IMAGE := $(RESOURCES)/banner
+ICON := $(RESOURCES)/icon.png
+RSF := $(TOPDIR)/$(RESOURCES)/SonicNexus.rsf
 
 #---------------------------------------------------------------------------------
-# list of directories containing libraries, this must be the top level containing
-# include and lib
+# Build Setup
 #---------------------------------------------------------------------------------
-LIBDIRS	:= $(CTRULIB) $(PORTLIBS)
+ARCH := -march=armv6k -mtune=mpcore -mfloat-abi=hard
 
+COMMON_FLAGS := -g -Wall -Wno-strict-aliasing -O3 -mword-relocations -fomit-frame-pointer -ffast-math $(ARCH) $(INCLUDE) -DARM11 -D_3DS $(BUILD_FLAGS)
+CFLAGS := $(COMMON_FLAGS) -std=gnu99
+CXXFLAGS := $(COMMON_FLAGS) -std=gnu++11
+ifeq ($(ENABLE_EXCEPTIONS),)
+	CXXFLAGS += -fno-rtti -fno-exceptions
+endif
 
-#---------------------------------------------------------------------------------
-# no real need to edit anything past this point unless you need to add additional
-# rules for different file extensions
+ASFLAGS := -g $(ARCH)
+LDFLAGS = -specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+
+LIBS := -lSDL_mixer -lSDL -lmikmod -lmad -lvorbisidec -logg -lcitro2d -lcitro3d -lctru -lm
+
 #---------------------------------------------------------------------------------
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
-export TOPDIR	:=	$(CURDIR)
-
-export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-			$(foreach dir,$(GRAPHICS),$(CURDIR)/$(dir)) \
-			$(foreach dir,$(DATA),$(CURDIR)/$(dir))
-
-export DEPSDIR	:=	$(CURDIR)/$(BUILD)
-
-CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-PICAFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.v.pica)))
-SHLISTFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.shlist)))
-GFXFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.t3s)))
-BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
-
 #---------------------------------------------------------------------------------
-# use CXX for linking C++ projects, CC for standard C
+# Build Variable Setup
 #---------------------------------------------------------------------------------
+recurse = $(shell find $2 -type $1 -name '$3' 2> /dev/null)
+
+CFILES := $(foreach dir,$(SOURCES),$(notdir $(call recurse,f,$(dir),*.c)))
+CPPFILES := $(foreach dir,$(SOURCES),$(notdir $(call recurse,f,$(dir),*.cpp)))
+SFILES := $(foreach dir,$(SOURCES),$(notdir $(call recurse,f,$(dir),*.s)))
+PICAFILES := $(foreach dir,$(SOURCES),$(notdir $(call recurse,f,$(dir),*.pica)))
+BINFILES := $(foreach dir,$(DATA),$(notdir $(call recurse,f,$(dir),*.*)))
+
+export OFILES := $(addsuffix .o,$(BINFILES)) $(PICAFILES:.pica=.shbin.o) $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
+export INCLUDE := $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) $(foreach dir,$(LIBDIRS),-I$(dir)/include) -I$(CURDIR)/$(BUILD)
+export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
+
 ifeq ($(strip $(CPPFILES)),)
+	export LD := $(CC)
+else
+	export LD := $(CXX)
+endif
+
+export DEPSDIR := $(CURDIR)/$(BUILD)
+export VPATH := $(foreach dir,$(SOURCES),$(CURDIR)/$(dir) $(call recurse,d,$(CURDIR)/$(dir),*)) $(foreach dir,$(DATA),$(CURDIR)/$(dir) $(call recurse,d,$(CURDIR)/$(dir),*))
+
+export TOPDIR := $(CURDIR)
+OUTPUT_DIR := $(TOPDIR)/$(OUTPUT)
+
+.PHONY: $(BUILD) clean all
+
 #---------------------------------------------------------------------------------
-	export LD	:=	$(CC)
+# Initial Targets
+#---------------------------------------------------------------------------------
+all: $(BUILD) $(OUTPUT_DIR)
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+
+3dsx: $(BUILD) $(OUTPUT_DIR)
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile $@
+
+cia: $(BUILD) $(OUTPUT_DIR) 
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile $@
+
+elf: $(BUILD) $(OUTPUT_DIR)
+	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile $@
+
+$(BUILD):
+	@[ -d $@ ] || mkdir -p $@
+
+$(OUTPUT_DIR):
+	@[ -d $@ ] || mkdir -p $@
+
+clean:
+	@echo clean ...
+	@rm -fr $(BUILD) $(OUTPUT)
 #---------------------------------------------------------------------------------
 else
 #---------------------------------------------------------------------------------
-	export LD	:=	$(CXX)
+
 #---------------------------------------------------------------------------------
+# Build Information Setup
+#---------------------------------------------------------------------------------
+3ds : $(OUTPUT_FILE).3ds
+
+elf : $(OUTPUT_FILE).elf
+
+citra : $(OUTPUT_FILE).elf
+	citra $(OUTPUT_FILE).elf
+
+include $(TOPDIR)/$(APP_INFO)
+APP_TITLE := $(shell echo "$(APP_TITLE)" | cut -c1-128)
+APP_DESCRIPTION := $(shell echo "$(APP_DESCRIPTION)" | cut -c1-256)
+APP_AUTHOR := $(shell echo "$(APP_AUTHOR)" | cut -c1-128)
+APP_PRODUCT_CODE := $(shell echo $(APP_PRODUCT_CODE) | cut -c1-16)
+APP_UNIQUE_ID := $(shell echo $(APP_UNIQUE_ID) | cut -c1-7)
+ifneq ("$(wildcard $(TOPDIR)/$(BANNER_IMAGE).cgfx)","")
+	BANNER_IMAGE_FILE := $(TOPDIR)/$(BANNER_IMAGE).cgfx
+	BANNER_IMAGE_ARG := -ci $(BANNER_IMAGE_FILE)
+else
+	BANNER_IMAGE_FILE := $(TOPDIR)/$(BANNER_IMAGE).png
+	BANNER_IMAGE_ARG := -i $(BANNER_IMAGE_FILE)
 endif
-#---------------------------------------------------------------------------------
+
+ifneq ("$(wildcard $(TOPDIR)/$(BANNER_AUDIO).cwav)","")
+	BANNER_AUDIO_FILE := $(TOPDIR)/$(BANNER_AUDIO).cwav
+	BANNER_AUDIO_ARG := -ca $(BANNER_AUDIO_FILE)
+else
+	BANNER_AUDIO_FILE := $(TOPDIR)/$(BANNER_AUDIO).wav
+	BANNER_AUDIO_ARG := -a $(BANNER_AUDIO_FILE)
+endif
+
+EMPTY :=
+SPACE := $(EMPTY) $(EMPTY)
+OUTPUT_NAME := $(subst $(SPACE),,$(APP_TITLE))
+OUTPUT_DIR := $(TOPDIR)/$(OUTPUT)
+OUTPUT_FILE := $(OUTPUT_DIR)/$(OUTPUT_NAME)
 
 #---------------------------------------------------------------------------------
 ifeq ($(GFXBUILD),$(BUILD))
@@ -130,29 +193,24 @@ export HFILES	:=	$(PICAFILES:.v.pica=_shbin.h) $(SHLISTFILES:.shlist=_shbin.h) \
 			$(addsuffix .h,$(subst .,_,$(BINFILES))) \
 			$(GFXFILES:.t3s=.h)
 
-export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
-			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-			-I$(CURDIR)/$(BUILD)
+APP_ICON := $(TOPDIR)/$(ICON)
+APP_ROMFS := $(TOPDIR)/$(ROMFS)
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 export _3DSXDEPS	:=	$(if $(NO_SMDH),,$(OUTPUT).smdh)
 
-ifeq ($(strip $(ICON)),)
-	icons := $(wildcard *.png)
-	ifneq (,$(findstring $(TARGET).png,$(icons)))
-		export APP_ICON := $(TOPDIR)/$(TARGET).png
-	else
-		ifneq (,$(findstring icon.png,$(icons)))
-			export APP_ICON := $(TOPDIR)/icon.png
-		endif
-	endif
+ifeq ($(OS),Windows_NT)
+	MAKEROM = makerom.exe
+	BANNERTOOL = bannertool.exe
 else
-	export APP_ICON := $(TOPDIR)/$(ICON)
+	MAKEROM = makerom
+	BANNERTOOL = bannertool
 endif
 
-ifeq ($(strip $(NO_SMDH)),)
-	export _3DSXFLAGS += --smdh=$(CURDIR)/$(TARGET).smdh
+_3DSXFLAGS += --smdh=$(OUTPUT_FILE).smdh
+ifneq ("$(wildcard $(TOPDIR)/$(ROMFS))","")
+	_3DSXFLAGS += --romfs=$(TOPDIR)/$(ROMFS)
 endif
 
 ifneq ($(ROMFS),)
@@ -178,10 +236,11 @@ $(DEPSDIR):
 	@mkdir -p $@
 endif
 
-#---------------------------------------------------------------------------------
-clean:
-	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(GFXBUILD)
+banner.bnr: $(BANNER_IMAGE_FILE) $(BANNER_AUDIO_FILE)
+	@$(BANNERTOOL) makebanner $(BANNER_IMAGE_ARG) $(BANNER_AUDIO_ARG) -o banner.bnr > /dev/null
+
+icon.icn: $(TOPDIR)/$(ICON)
+	@$(BANNERTOOL) makesmdh -s "$(APP_TITLE)" -l "$(APP_TITLE)" -p "$(APP_AUTHOR)" -i $(TOPDIR)/$(ICON) -o icon.icn > /dev/null
 
 #---------------------------------------------------------------------------------
 $(GFXBUILD)/%.t3x	$(BUILD)/%.h	:	%.t3s
@@ -195,11 +254,9 @@ else
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-$(OUTPUT).3dsx	:	$(OUTPUT).elf $(_3DSXDEPS)
-
-$(OFILES_SOURCES) : $(HFILES)
-
-$(OUTPUT).elf	:	$(OFILES)
+%.bin.o: %.bin
+	@echo $(notdir $<)
+	@$(bin2o)
 
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data
@@ -249,8 +306,21 @@ endef
 	@echo $(notdir $<)
 	@tex3ds -i $< -H $*.h -d $*.d -o $*.t3x
 
--include $(DEPSDIR)/*.d
+%.shbin.o: %.pica
+	@echo $(notdir $<)
+	$(eval CURBIN := $(patsubst %.pica,%.shbin,$(notdir $<)))
+	$(eval CURH := $(patsubst %.pica,%.psh.h,$(notdir $<)))
+	@picasso -h $(CURH) -o $(CURBIN) $<
+	@bin2s $(CURBIN) | $(AS) -o $@
+	@echo "extern const u8" `(echo $(CURBIN) | sed -e 's/^\([0-9]\)/_\1/' | tr . _)`"_end[];" > `(echo $(CURBIN) | tr . _)`.h
+	@echo "extern const u8" `(echo $(CURBIN) | sed -e 's/^\([0-9]\)/_\1/' | tr . _)`"[];" >> `(echo $(CURBIN) | tr . _)`.h
+	@echo "extern const u32" `(echo $(CURBIN) | sed -e 's/^\([0-9]\)/_\1/' | tr . _)`_size";" >> `(echo $(CURBIN) | tr . _)`.h
 
 #---------------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------------
+-include $(DEPENDS)
+
+#---------------------------------------------------------------------------------
+
+endif
