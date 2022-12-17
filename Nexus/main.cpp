@@ -49,12 +49,22 @@ void parseArguments(int argc, char *argv[]) {
 
 int main(int argc, char *argv[])
 {
-#if !RETRO_USE_ORIGINAL_CODE
+#if RETRO_PLATFORM != RETRO_3DS
     parseArguments(argc, argv);
+#else
+    _3ds_init();
+#endif
+    Engine.Init();
+
+#if RETRO_PLATFORM == RETRO_3DS
+    _3ds_setColorDepth();
 #endif
 
-    Engine.Init();
     Engine.Run();
+
+#if RETRO_PLATFORM == RETRO_3DS
+    _3ds_exit();
+#endif
 
 #if !RETRO_USE_ORIGINAL_CODE
     if (Engine.consoleEnabled) {
