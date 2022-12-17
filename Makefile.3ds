@@ -32,10 +32,6 @@ include $(DEVKITARM)/3ds_rules
 #     - <libctru folder>/default_icon.png
 #---------------------------------------------------------------------------------
 TARGET		:=	SonicNexus
-APP_TITLE := Sonic Nexus
-APP_DESCRIPTION := A port of Sonic Nexus to the 3DS!
-APP_AUTHOR := Rubberduckycooly, Zero0xx
-APP_ICON := 3ds/48x48.png
 BUILD		:=	build_3ds
 SOURCES		:=	Nexus Nexus/3ds
 DATA		:=	data
@@ -186,12 +182,6 @@ clean:
 	@echo clean ...
 	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(GFXBUILD)
 
-cia: $(TARGET).elf
-	@bannertool makebanner -i 3ds/banner.png -a 3ds/jingle.wav -c "$(BUILDDIR)/banner.bnr"
-	@bannertool makesmdh -s "$(APP_TITLE)" -l "$(APP_DESCRIPTION)" -p "$(APP_AUTHOR)" -i "$(APP_ICON)" -c "$(BUILDDIR)/icon.icn"
-	@makerom -f cia -c "$(TARGET).cia" -DAPP_ENCRYPTED=false -elf "$(TARGET).elf" -rsf 3ds/SonicNexus.rsf -exefslogo -target t -icon "$(BUILDDIR)/icon.icn" -banner "$(BUILDDIR)/banner.bnr"
-	@echo "built cia"
-
 #---------------------------------------------------------------------------------
 $(GFXBUILD)/%.t3x	$(BUILD)/%.h	:	%.t3s
 #---------------------------------------------------------------------------------
@@ -204,14 +194,11 @@ else
 #---------------------------------------------------------------------------------
 # main targets
 #---------------------------------------------------------------------------------
-3dsx: $(BUILD) $(OUTPUT_DIR)
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile $@
+$(OUTPUT).3dsx	:	$(OUTPUT).elf $(_3DSXDEPS)
 
-cia: $(BUILD) $(OUTPUT_DIR)
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile $@
+$(OFILES_SOURCES) : $(HFILES)
 
-citra: $(BUILD) $(OUTPUT_DIR)
-	@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile $@
+$(OUTPUT).elf	:	$(OFILES)
 
 #---------------------------------------------------------------------------------
 # you need a rule like this for each extension you use as binary data
