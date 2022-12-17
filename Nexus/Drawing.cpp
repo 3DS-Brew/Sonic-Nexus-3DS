@@ -18,9 +18,12 @@ byte graphicData[GFXDATA_MAX];
 
 int InitRenderDevice()
 {
+
+#if RETRO_USING_SDL1 || RETRO_USING_SDL2
     char gameTitle[0x40];
 
     sprintf(gameTitle, "%s%s", Engine.gameWindowText, Engine.usingBinFile ? "" : " (Using Data Folder)");
+#endif
 
     Engine.pixelBuffer = new byte[SCREEN_XSIZE * SCREEN_YSIZE];
     memset(Engine.pixelBuffer, 0, (SCREEN_XSIZE * SCREEN_YSIZE) * sizeof(byte));
@@ -163,8 +166,8 @@ void FlipScreen()
     SDL_RenderClear(Engine.renderer);
 #endif
 
-    int pitch    = 0;
-    void *pixels = NULL;
+    //int pitch    = 0;
+    //void *pixels = NULL;
 
     switch (Engine.colourMode) {
         case 0: // 8-bit
@@ -207,6 +210,11 @@ void FlipScreen()
             memcpy(pixels, frameBuffer, pitch * SCREEN_YSIZE);
             SDL_UnlockTexture(Engine.screenBuffer);
 #endif
+
+#if RETRO_PLATFORM == RETRO_3DS
+	    //CopyFrameBuffer16((u16*) frameBuffer);
+#endif
+
             if (frameBuffer)
                 delete[] frameBuffer;
             break;
@@ -246,6 +254,10 @@ void FlipScreen()
             SDL_LockTexture(Engine.screenBuffer, NULL, &pixels, &pitch);
             memcpy(pixels, frameBuffer, pitch * SCREEN_YSIZE);
             SDL_UnlockTexture(Engine.screenBuffer);
+#endif
+
+#if RETRO_PLATFORM == RETRO_3DS
+	    CopyFrameBuffer16((u16*) frameBuffer);
 #endif
             if (frameBuffer)
                 delete[] frameBuffer;
@@ -314,6 +326,10 @@ void FlipScreen()
     SDL_RenderCopy(Engine.renderer, Engine.screenBuffer, NULL, NULL);
 
     SDL_RenderPresent(Engine.renderer);
+#endif
+
+#if RETRO_PLATFORM == RETRO_3DS
+    _3ds_flip();
 #endif
 }
 
@@ -614,7 +630,7 @@ void DrawHLineScrollLayer(int layerID)
                 tilePxLineCnt = TILE_SIZE - tilePxXPos;
                 lineRemain -= tilePxLineCnt;
                 switch (tiles128x128.direction[chunk]) {
-                    case FLIP_NONE:
+                    case FLIP_NO:
                         gfxDataPtr = &tilesetGFXData[tileOffsetY + tiles128x128.gfxDataPos[chunk] + tilePxXPos];
                         while (tilePxLineCnt--) {
                             if (*gfxDataPtr > 0)
@@ -679,7 +695,7 @@ void DrawHLineScrollLayer(int layerID)
                 // Loop Unrolling (faster but messier code)
                 if (tiles128x128.visualPlane[chunk] == (byte)aboveMidPoint) {
                     switch (tiles128x128.direction[chunk]) {
-                        case FLIP_NONE:
+                        case FLIP_NO:
                             gfxDataPtr = &tilesetGFXData[tiles128x128.gfxDataPos[chunk] + tileOffsetY];
                             if (*gfxDataPtr > 0)
                                 *pixelBufferPtr = *gfxDataPtr;
@@ -975,7 +991,7 @@ void DrawHLineScrollLayer(int layerID)
                 lineRemain -= tilePxLineCnt;
                 if (tiles128x128.visualPlane[chunk] == (byte)aboveMidPoint) {
                     switch (tiles128x128.direction[chunk]) {
-                        case FLIP_NONE:
+                        case FLIP_NO:
                             gfxDataPtr = &tilesetGFXData[tiles128x128.gfxDataPos[chunk] + tileOffsetY];
                             while (tilePxLineCnt--) {
                                 if (*gfxDataPtr > 0)
@@ -1131,7 +1147,7 @@ void DrawVLineScrollLayer(int layerID)
         if (tiles128x128.visualPlane[chunk] == (byte)aboveMidPoint) {
             lineRemain -= tilePxLineCnt;
             switch (tiles128x128.direction[chunk]) {
-                case FLIP_NONE:
+                case FLIP_NO:
                     gfxDataPtr = &tilesetGFXData[TILE_SIZE * tileY + tileX16 + tiles128x128.gfxDataPos[chunk]];
                     while (tilePxLineCnt--) {
                         if (*gfxDataPtr > 0)
@@ -1199,7 +1215,7 @@ void DrawVLineScrollLayer(int layerID)
             // Loop Unrolling (faster but messier code)
             if (tiles128x128.visualPlane[chunk] == (byte)aboveMidPoint) {
                 switch (tiles128x128.direction[chunk]) {
-                    case FLIP_NONE:
+                    case FLIP_NO:
                         gfxDataPtr = &tilesetGFXData[tiles128x128.gfxDataPos[chunk] + tileX16];
                         if (*gfxDataPtr > 0)
                             *pixelBufferPtr = *gfxDataPtr;
@@ -1552,7 +1568,7 @@ void DrawVLineScrollLayer(int layerID)
 
             if (tiles128x128.visualPlane[chunk] == (byte)aboveMidPoint) {
                 switch (tiles128x128.direction[chunk]) {
-                    case FLIP_NONE:
+                    case FLIP_NO:
                         gfxDataPtr = &tilesetGFXData[tiles128x128.gfxDataPos[chunk] + tileX16];
                         while (tilePxLineCnt--) {
                             if (*gfxDataPtr > 0)
@@ -1617,7 +1633,10 @@ void DrawVLineScrollLayer(int layerID)
         pixelBufferPtr -= (SCREEN_XSIZE * SCREEN_YSIZE) - 1;
     }
 }
-void Draw3DCloudLayer(int layerID) { TileLayer *layer = &stageLayouts[activeTileLayers[layerID]]; }
+/* bruh */
+void Draw3DCloudLayer(int layerID) { 
+     //TileLayer *layer = &stageLayouts[activeTileLayers[layerID]]; 
+}
 
 void DrawTintRectangle(int XPos, int YPos, int width, int height, byte tintID)
 {

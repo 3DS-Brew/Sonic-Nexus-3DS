@@ -239,6 +239,12 @@ void RetroEngine::Init()
         std::copy(path.begin(), path.end(), resourcePath);
     }
 
+#if RETRO_PLATFORM == RETRO_3DS
+    while (running && aptMainLoop()) {
+#else
+    while (running) {
+#endif
+
     strcat(dest, resourcePath);
     strcat(dest, "\\");
     strcat(dest, Engine.dataFile);

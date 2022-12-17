@@ -1,11 +1,13 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
+#if RETRO_PLATFORM != RETRO_3DS
 #include <stdlib.h>
+#endif
 
 #include <vorbis/vorbisfile.h>
 
-#if RETRO_PLATFORM != RETRO_VITA
+#if RETRO_PLATFORM != RETRO_VITA && RETRO_PLATFORM != RETRO_3DS
 #include "SDL.h"
 #endif
 
@@ -19,12 +21,16 @@
 struct TrackInfo {
     char fileName[0x40];
     bool trackLoop;
+
+#if RETRO_USING_SDLMIXER
+    Mix_Music* mus;
+#endif    
 };
 
 struct MusicPlaybackInfo {
     OggVorbis_File vorbisFile;
     int vorbBitstream;
-#if RETRO_USING_SDL1
+#if RETRO_USING_SDL1_AUDIO
     SDL_AudioSpec spec;
 #endif
 #if RETRO_USING_SDL2
@@ -33,11 +39,15 @@ struct MusicPlaybackInfo {
     Sint16 *buffer;
     FileInfo fileInfo;
     bool trackLoop;
+    uint loopPoint;
     bool loaded;
 };
 
 struct SFXInfo {
     char name[0x40];
+#if RETRO_USING_SDLMIXER
+    Mix_Chunk* chunk;
+#endif    
     Sint16 *buffer;
     size_t length;
     bool loaded;
@@ -78,14 +88,18 @@ extern ChannelInfo sfxChannels[CHANNEL_COUNT];
 
 extern MusicPlaybackInfo musInfo;
 
-#if RETRO_USING_SDL1 || RETRO_USING_SDL2
-extern SDL_AudioSpec audioDeviceFormat;
+#if RETRO_USING_SDLMIXER
+extern int currentTrack;
+extern int previousTrack;
 #endif
 
+#if RETRO_USING_SDL1_AUDIO || RETRO_USING_SDL2
+extern SDL_AudioSpec audioDeviceFormat;
+#endif
 int InitAudioPlayback();
 void LoadGlobalSfx();
 
-#if RETRO_USING_SDL1 || RETRO_USING_SDL2
+#if RETRO_USING_SDL1_AUDIO || RETRO_USING_SDL2
 void ProcessMusicStream(void *data, Sint16 *stream, int len);
 void ProcessAudioPlayback(void *data, Uint8 *stream, int len);
 void ProcessAudioMixing(Sint32 *dst, const Sint16 *src, int len, int volume, sbyte pan);
@@ -115,9 +129,9 @@ inline void freeMusInfo()
     }
 }
 #else
-void ProcessMusicStream() {}
-void ProcessAudioPlayback() {}
-void ProcessAudioMixing() {}
+//void ProcessMusicStream() {}
+//void ProcessAudioPlayback() {}
+//void ProcessAudioMixing() {}
 
 inline void freeMusInfo()
 {
@@ -143,6 +157,14 @@ void SetMusicTrack(char *filePath, byte trackID, bool loop);
 bool PlayMusic(int track);
 inline void StopMusic()
 {
+#if RETRO_USING_SDLMIXER
+    Mix_HaltMusic();
+
+    currentTrack = -1;
+    previousTrack = -1;
+#endif
+    printLog("StopMusic() called");
+
     musicStatus = MUSIC_STOPPED;
     freeMusInfo();
 }
@@ -162,6 +184,11 @@ void SetSfxAttributes(int sfx, int loopCount, sbyte pan);
 
 inline void SetMusicVolume(int volume)
 {
+#if RETRO_USING_SDLMIXER
+    Mix_VolumeMusic(volume);
+#endif
+     printLog("SetMusicVolume() called");
+         
     if (volume < 0)
         volume = 0;
     if (volume > MAX_VOLUME)
@@ -171,12 +198,22 @@ inline void SetMusicVolume(int volume)
 
 inline void PauseSound()
 {
+#if RETRO_USING_SDLMIXER
+    Mix_PauseMusic();
+#endif
+    printLog("PauseSound() called");
+
     if (musicStatus == MUSIC_PLAYING)
         musicStatus = MUSIC_PAUSED;
 }
 
 inline void ResumeSound()
 {
+#if RETRO_USING_SDLMIXER
+    Mix_ResumeMusic();
+#endif
+    printLog("ResumeSound() called");
+
     if (musicStatus == MUSIC_PAUSED)
         musicStatus = MUSIC_PLAYING;
 }
@@ -191,6 +228,10 @@ inline void ReleaseGlobalSfx()
     StopAllSfx();
     for (int i = globalSFXCount - 1; i >= 0; --i) {
         if (sfxList[i].loaded) {
+#if RETRO_USING_SDLMIXER
+    	    Mix_FreeChunk(sfxList[i].chunk);
+#endif
+
             StrCopy(sfxList[i].name, "");
             free(sfxList[i].buffer);
             sfxList[i].length = 0;
@@ -203,6 +244,10 @@ inline void ReleaseStageSfx()
 {
     for (int i = stageSFXCount + globalSFXCount; i >= globalSFXCount; --i) {
         if (sfxList[i].loaded) {
+#if RETRO_USING_SDLMIXER
+	    Mix_FreeChunk(sfxList[i].chunk);
+#endif
+
             StrCopy(sfxList[i].name, "");
             free(sfxList[i].buffer);
             sfxList[i].length = 0;
@@ -218,6 +263,10 @@ inline void ReleaseAudioDevice()
     StopAllSfx();
     ReleaseStageSfx();
     ReleaseGlobalSfx();
+
+#if RETRO_USING_SDLMIXER
+    Mix_CloseAudio();
+#endif
 }
 
 #endif // !AUDIO_H

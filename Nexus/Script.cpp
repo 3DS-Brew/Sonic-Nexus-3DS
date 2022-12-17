@@ -1860,7 +1860,7 @@ void ProcessScript(int scriptCodePtr, int jumpTablePtr, byte scriptSub)
 
         ObjectScript *scriptInfo = &objectScriptList[objectEntityList[objectLoop].type];
         Entity *entity           = &objectEntityList[objectLoop];
-        Player *player           = &playerList[activePlayer];
+        //Player *player           = &playerList[activePlayer];
         SpriteFrame *spriteFrame = nullptr;
 
         // Functions
