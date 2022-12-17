@@ -187,9 +187,9 @@ clean:
 	@rm -fr $(BUILD) $(TARGET).3dsx $(OUTPUT).smdh $(TARGET).elf $(GFXBUILD)
 
 cia: $(TARGET).elf
-	@bannertool makebanner -i 3ds/banner.png -a 3ds/jingle.wav -o "$(BUILDDIR)/banner.bnr"
-	@bannertool makesmdh -s "$(APP_TITLE)" -l "$(APP_DESCRIPTION)" -p "$(APP_AUTHOR)" -i "$(APP_ICON)" -o "$(BUILDDIR)/icon.icn"
-	@makerom -f cia -o "$(TARGET).cia" -DAPP_ENCRYPTED=false -elf "$(TARGET).elf" -rsf 3ds/SonicNexus.rsf -exefslogo -target t -icon "$(BUILDDIR)/icon.icn" -banner "$(BUILDDIR)/banner.bnr"
+	@bannertool makebanner -i 3ds/banner.png -a 3ds/jingle.wav -c "$(BUILDDIR)/banner.bnr"
+	@bannertool makesmdh -s "$(APP_TITLE)" -l "$(APP_DESCRIPTION)" -p "$(APP_AUTHOR)" -i "$(APP_ICON)" -c "$(BUILDDIR)/icon.icn"
+	@makerom -f cia -c "$(TARGET).cia" -DAPP_ENCRYPTED=false -elf "$(TARGET).elf" -rsf 3ds/SonicNexus.rsf -exefslogo -target t -icon "$(BUILDDIR)/icon.icn" -banner "$(BUILDDIR)/banner.bnr"
 	@echo "built cia"
 
 #---------------------------------------------------------------------------------
