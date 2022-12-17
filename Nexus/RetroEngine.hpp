@@ -169,9 +169,6 @@ enum RetroBytecodeFormat {
 #endif
 #endif
 
-#include "cocoaHelpers.hpp"
-#endif
-
 extern bool usingCWD;
 extern bool engineDebugMode;
 
