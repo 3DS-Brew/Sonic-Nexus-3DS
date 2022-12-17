@@ -10,7 +10,7 @@ jobs:
   Nexus3DS:
     runs-on: ubuntu-latest
     container:
-      image: devkitpro/devkitarm:latest
+      image: meastes/devkitarm-3ds:latest
     steps:
       - uses: actions/checkout@v3
       - name: Install build requirements
