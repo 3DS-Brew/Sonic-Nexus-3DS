@@ -10,20 +10,15 @@ jobs:
   Nexus3DS:
     runs-on: ubuntu-latest
     container:
-      image: meastes/devkitarm-3ds:latest
+      image: devkitpro/devkitarm:latest
     steps:
       - uses: actions/checkout@v3
+      - name: Install build requirements
+        run: |
+          apt update
+          apt install ninja-build
       - name: Download and install dependencies
         run : |
           apt install build-essential git libsdl2-dev libvorbis-dev libogg-dev libtheora-dev -y   
       - name: Build Sonic Nexus for the Nintendo 3DS
-        run: make -f Makefile.3ds
-      - name: Move artifacts
-        run: |
-          mkdir artifacts
-          mv ./build_3ds ./artifacts
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v1.0.0
-        with:
-          name: Nexus 3DS
-          path: artifacts                       
+        run: make cia -f Makefile.3ds             
